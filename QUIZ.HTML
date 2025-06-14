@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 600px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #quiz {
+      margin-top: 20px;
+    }
+
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    #options {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    #options li {
+      margin: 10px 0;
+    }
+
+    .option-btn {
+      width: 100%;
+      padding: 10px;
+      background: #eee;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .option-btn:hover {
+      background: #ddd;
+    }
+
+    .correct {
+      background: #4CAF50 !important;
+      color: #fff;
+    }
+
+    .wrong {
+      background: #f44336 !important;
+      color: #fff;
+    }
+
+    #nextBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #result {
+      text-align: center;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Quiz Game</h1>
+    
+    <div id="category-selection">
+      <label>Select Category:</label>
+      <select id="categorySelect">
+        <option value="general">General Knowledge</option>
+        <option value="science">Science</option>
+      </select>
+      <button onclick="startQuiz()">Start Quiz</button>
+    </div>
+
+    <div id="quiz" class="hidden">
+      <div class="quiz-header">
+        <div id="timer">Time: <span id="time">30</span>s</div>
+        <div id="score">Score: 0</div>
+      </div>
+      <h2 id="question">Question</h2>
+      <ul id="options"></ul>
+      <button id="nextBtn" onclick="nextQuestion()">Next</button>
+    </div>
+
+    <div id="result" class="hidden"></div>
+  </div>
+
+  <script>
+    const questionsData = {
+      general: [
+        {
+          question: "What is the capital of India?",
+          options: ["Delhi", "Mumbai", "Chennai", "Kolkata"],
+          answer: 0
+        },
+        {
+          question: "Which is the national bird of India?",
+          options: ["Peacock", "Sparrow", "Parrot", "Crow"],
+          answer: 0
+        }
+      ],
+      science: [
+        {
+          question: "What planet is known as the Red Planet?",
+          options: ["Earth", "Mars", "Venus", "Jupiter"],
+          answer: 1
+        },
+        {
+          question: "What is H2O commonly known as?",
+          options: ["Salt", "Acid", "Water", "Hydrogen"],
+          answer: 2
+        }
+      ]
+    };
+
+    let currentCategory = "general";
+    let questions = [];
+    let currentQuestion = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = 30;
+
+    function startQuiz() {
+      currentCategory = document.getElementById("categorySelect").value;
+      questions = questionsData[currentCategory];
+      currentQuestion = 0;
+      score = 0;
+      timeLeft = 30;
+
+      document.getElementById("category-selection").classList.add("hidden");
+      document.getElementById("quiz").classList.remove("hidden");
+      document.getElementById("result").classList.add("hidden");
+
+      document.getElementById("score").innerText = `Score: ${score}`;
+      loadQuestion();
+      startTimer();
+    }
+
+    function loadQuestion() {
+      clearInterval(timer);
+      timeLeft = 30;
+      startTimer();
+
+      const q = questions[currentQuestion];
+      document.getElementById("question").innerText = q.question;
+      const optionsList = document.getElementById("options");
+      optionsList.innerHTML = "";
+
+      q.options.forEach((opt, i) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.innerText = opt;
+        btn.className = "option-btn";
+        btn.onclick = () => checkAnswer(i);
+        li.appendChild(btn);
+        optionsList.appendChild(li);
+      });
+
+      document.getElementById("nextBtn").disabled = true;
+    }
+
+    function checkAnswer(selectedIndex) {
+      clearInterval(timer);
+      const correctIndex = questions[currentQuestion].answer;
+      const optionButtons = document.querySelectorAll(".option-btn");
+
+      optionButtons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (i === correctIndex) btn.classList.add("correct");
+        if (i === selectedIndex && i !== correctIndex) btn.classList.add("wrong");
+      });
+
+      if (selectedIndex === correctIndex) {
+        score++;
+        document.getElementById("score").innerText = `Score: ${score}`;
+      }
+
+      document.getElementById("nextBtn").disabled = false;
+    }
+
+    function nextQuestion() {
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function startTimer() {
+      document.getElementById("time").innerText = timeLeft;
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById("time").innerText = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          checkAnswer(-1); // Auto skip if time is up
+        }
+      }, 1000);
+    }
+
+    function showResult() {
+      document.getElementById("quiz").classList.add("hidden");
+      document.getElementById("result").classList.remove("hidden");
+
+      let review = "<ul>";
+      questions.forEach((q, i) => {
+        review += `<li><strong>Q:</strong> ${q.question}<br/><strong>Correct:</strong> ${q.options[q.answer]}</li><br/>`;
+      });
+      review += "</ul>";
+
+      document.getElementById("result").innerHTML = `
+        <h2>Quiz Completed!</h2>
+        <p>Your Score: ${score} / ${questions.length}</p>
+        <h3>Answer Review:</h3>
+        ${review}
+        <button onclick="location.reload()">Play Again</button>
+      `;
+    }
+  </script>
+</body>
+</html>
